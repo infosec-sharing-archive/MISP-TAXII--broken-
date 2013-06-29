@@ -1,0 +1,6 @@
+tmp/
+flask/
+config.py
+*.py[cod]
+.webassets-cache
+gen/
