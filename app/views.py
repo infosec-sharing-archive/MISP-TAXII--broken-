@@ -6,8 +6,10 @@ from cStringIO import StringIO
 from flask import request
 from app import app, db, make_taxii_response
 from models import Event
+from json import loads
 
 import xmltodict
+import sys
 
 
 def etree_to_dict(t):
@@ -78,19 +80,43 @@ def poll():
 def inbox():
     """The Inbox Service is the mechanism by which a Consumer accepts messages from a Producer in
     Producer-initiated exchanges (i.e., push messaging)"""
+
     msg = tm.get_message_from_xml(request.data)
     dict = msg.to_dict()
-    c = xmltodict.parse(dict['content_blocks'][0]['content'])
-
+    data = dict['content_blocks'][0]['content']
+    print data
+    #sys.exit(0)
+    j = loads(data)
+    print j
+    #exit()
     new_events = []
-    for event in c['CyDefSIG']['Event']:
+    for event in j:
+        print event
+        exit()
         checkevent = Event.query.filter_by(uuid=event['uuid']).first()
         if checkevent is None:
             e = Event(event['date'], event['risk'], event['info'], event['published'],
-                      event['uuid'], event['Attribute'])
+                      event['uuid'], event['attribute'])
             new_events.append(e)
-    db.session.add_all(new_events)
-    db.session.commit()
+    #db.session.add_all(new_events)
+    #db.session.commit()
+    print new_events
+
+
+    # for posting XML
+    #msg = tm.get_message_from_xml(request.data)
+    #dict = msg.to_dict()
+    #c = xmltodict.parse(dict['content_blocks'][0]['content'])
+
+    #new_events = []
+    #for event in c['CyDefSIG']['Event']:
+    #    checkevent = Event.query.filter_by(uuid=event['uuid']).first()
+    #    if checkevent is None:
+    #        e = Event(event['date'], event['risk'], event['info'], event['published'],
+    #                  event['uuid'], event['Attribute'])
+    #        new_events.append(e)
+    #db.session.add_all(new_events)
+    #db.session.commit()
 
     if request.headers.get('X-TAXII-Content-Type') == t.VID_TAXII_XML_10:
 
