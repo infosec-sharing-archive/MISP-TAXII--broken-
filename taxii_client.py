@@ -12,6 +12,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relation, sessionmaker, class_mapper
 from json import dumps
 import warnings
+from flask import jsonify
 
 
 PID_FILE = '/tmp/taxii_daemon.pid'
@@ -85,11 +86,9 @@ def load_db_data():
     #    for event in session.query(Event).filter(Event.published == 1)
     #]
     #return dumps(serialized_events)
-    events = session.query(Event).filter(Event.published == 1, Event.published != '').limit(1).all()
-    all = [dumps(e.serialize) for e in events]
-    #for x in all:
-    #    print x
-
+    events = session.query(Event).filter(Event.published == 1, Event.published != '').limit(2).all()
+    all = [e.serialize for e in events]
+    return dumps(all)
 
 class Event(Base):
     __tablename__ = 'events'
