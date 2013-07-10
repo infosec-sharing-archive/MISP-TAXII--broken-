@@ -6,7 +6,7 @@ from cStringIO import StringIO
 from flask import request
 from app import app, db, make_taxii_response
 from models import Event
-from json import loads
+from json import loads, load
 
 import xmltodict
 import sys
@@ -84,24 +84,6 @@ def inbox():
     msg = tm.get_message_from_xml(request.data)
     dict = msg.to_dict()
     data = dict['content_blocks'][0]['content']
-    print data
-    #sys.exit(0)
-    j = loads(data)
-    print j
-    #exit()
-    new_events = []
-    for event in j:
-        print event
-        exit()
-        checkevent = Event.query.filter_by(uuid=event['uuid']).first()
-        if checkevent is None:
-            e = Event(event['date'], event['risk'], event['info'], event['published'],
-                      event['uuid'], event['attribute'])
-            new_events.append(e)
-    #db.session.add_all(new_events)
-    #db.session.commit()
-    print new_events
-
 
     # for posting XML
     #msg = tm.get_message_from_xml(request.data)
@@ -119,20 +101,47 @@ def inbox():
     #db.session.commit()
 
     if request.headers.get('X-TAXII-Content-Type') == t.VID_TAXII_XML_10:
+        c = None
+        try:
+            c = loads(data)
+        except ValueError as e:
+            print '[-] ' + str(e)
+            try:
+                xml_c = xmltodict.parse(dict['content_blocks'][0]['content'])
+                c = xml_c['CyDefSIG']['Event']
 
-        status_message1 = tm.StatusMessage(
-            #Required
-            message_id=tm.generate_message_id(),
-            #Required. Should be the ID of the corresponding request
-            in_response_to=msg.message_id,
-            #Required
-            status_type=tm.ST_SUCCESS,
-            #May be optional or not allowed, depending on status_type
-            status_detail='Machine-processable info here!',
-            #Optional
-            message='This is a message.')
+            except Exception as ee:
+                print '[--] ' + str(ee)
 
-        return make_taxii_response(status_message1.to_xml())
+        if c:
+            new_events = []
+            for event in c:
+                #print event
+                checkevent = Event.query.filter_by(uuid=event['uuid']).first()
+                if checkevent is None:
+                    e = Event(event['date'], event['risk'], event['info'], event['published'],
+                              event['uuid'], event['Attribute'])
+                    new_events.append(e)
+            db.session.add_all(new_events)
+            try:
+                db.session.commit()
+            except Exception as e:
+                print '[-] ' + str(e)
+                error_message = tm.StatusMessage(
+                    message_id=tm.generate_message_id(),
+                    in_response_to=msg.message_id,
+                    status_type=tm.ST_FAILURE,
+                    status_detail='Could not save session')
+                return make_taxii_response(error_message)
+
+            status_message1 = tm.StatusMessage(
+                message_id=tm.generate_message_id(),
+                in_response_to=msg.message_id,
+                status_type=tm.ST_SUCCESS,
+                status_detail='Machine-processable info here!',
+                message='This is a message.')
+
+            return make_taxii_response(status_message1.to_xml())
 
     error_message = tm.StatusMessage(
         message_id=tm.generate_message_id(),

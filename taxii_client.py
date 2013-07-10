@@ -12,7 +12,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relation, sessionmaker, class_mapper
 from json import dumps
 import warnings
-from flask import jsonify
 
 
 PID_FILE = '/tmp/taxii_daemon.pid'
@@ -20,9 +19,6 @@ PROXY_ENABLED = True
 PROXY_SCHEME = 'http'
 PROXY_STRING = '127.0.0.1:8008'
 CB_XML_112608 = 'http://www.w3.org/TR/xml'
-#TAXII_SERVICE_HOST = 'misplab.cert.europa.eu'
-#TAXII_SERVICE_PORT = 80
-#TAXII_SERVICE_PATH = '/taxii/inbox'
 TAXII_SERVICE_HOST = '127.0.0.1'
 TAXII_SERVICE_PORT = 4242
 TAXII_SERVICE_PATH = '/inbox'
@@ -80,15 +76,9 @@ def create_inbox_message(data, content_binding=CB_XML_112608):
 
 def load_db_data():
     session = Session()
+    events = [e.serialize for e in session.query(Event).filter(Event.published == 1).all()]
+    return dumps(events)
 
-    #serialized_events = [
-    #    serialize(event)
-    #    for event in session.query(Event).filter(Event.published == 1)
-    #]
-    #return dumps(serialized_events)
-    events = session.query(Event).filter(Event.published == 1, Event.published != '').limit(2).all()
-    all = [e.serialize for e in events]
-    return dumps(all)
 
 class Event(Base):
     __tablename__ = 'events'
@@ -105,15 +95,13 @@ class Event(Base):
     def serialize(self):
         """Return object data in easily serializeable format"""
         return {
-            self.uuid: {
-                #'id': self.id,
-                "date": self.date.__str__(),
-                "risk": self.risk,
-                "info": self.info,
-                "published": self.published,
-                "uuid": self.uuid,
-                "attributes": self.serialize_attributes
-            }
+            "date": self.date.__str__(),
+            "risk": self.risk,
+            "info": self.info,
+            "published": self.published,
+            "uuid": self.uuid,
+            "Attribute": self.serialize_attributes
+
         }
 
     @property
@@ -143,25 +131,18 @@ class Attribute(Base):
     revision = Column(Integer)
     private = Column(Boolean)
 
-    #event = relation('Event', backref=backref('attributes'))
-    #value = Column(String(255))?
-    #category_order = Column(String)?
-
     @property
     def serialize(self):
         """Return object data in easily serializeable format"""
         return {
-            self.uuid: {
-                #'id': self.id,
-                #'event_id': self.event_id,
-                "category": self.category,
-                "to_ids": self.to_ids,
-                "value1": self.value1,
-                "value2": self.value2,
-                "uuid": self.uuid,
-                "private": self.private,
-                #'revision': self.revision
-            }
+            "category": self.category,
+            "to_ids": self.to_ids,
+            "value1": self.value1,
+            "value2": self.value2,
+            "uuid": self.uuid,
+            "private": self.private,
+            'revision': self.revision
+
         }
 
     def __init__(self, **kwargs):
@@ -185,22 +166,6 @@ def main(**args):
         client.proxy_type = PROXY_SCHEME
         client.proxy_string = PROXY_STRING
 
-    #session = Session()
-
-    #print eserialized
-    #for e in events:
-    #    print e.serialize
-    #    exit()
-    #ejson = dumps(events.serialize())
-    #print ejson
-    #x = {}
-    #for e, a in session.query(Event, Attribute).filter(Event.id == Attribute.event_id).\
-    #    filter(Event.published == 1).all():
-    #    #print serialize(e), serialize(a)
-    #    x[serialize(e)] = serialize(a)
-    #print x
-    #exit()
-
     msg_id, msg = '', ''
 
     if args['data_type'] == 'string':
@@ -208,16 +173,6 @@ def main(**args):
     elif args['data_type'] == 'xml':
         msg_id, msg = create_inbox_message(open(args['data']).read())
     elif args['data_type'] == 'json':
-        data = load_db_data()
-        print data
-        exit()
-        for x in data:
-            print x
-        #print dumps(str(data))
-        #exit()
-        #x = "".join(load_db_data())
-        #print x
-        exit()
         msg_id, msg = create_inbox_message(load_db_data())
 
     http_response = client.callTaxiiService2(args['host'], args['path'],

@@ -36,7 +36,8 @@ class Event(db.Model):
                         print '[-]' + attr
 
     def __repr__(self):
-        return '<{}, {}>'.format(self.uuid, ":".join([a.id for a in self.attributes]))
+        return '<{}, {}>'.format(self.uuid, ":".join([a.uuid for a in self.attributes]))
+
 
 
 class Attribute(db.Model):
