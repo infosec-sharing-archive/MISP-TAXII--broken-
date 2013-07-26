@@ -18,7 +18,6 @@ PID_FILE = '/tmp/taxii_daemon.pid'
 PROXY_ENABLED = True
 PROXY_SCHEME = 'http'
 PROXY_STRING = '127.0.0.1:8008'
-CB_XML_112608 = 'http://www.w3.org/TR/xml'
 TAXII_SERVICE_HOST = '127.0.0.1'
 TAXII_SERVICE_PORT = 4242
 TAXII_SERVICE_PATH = '/inbox'
@@ -59,19 +58,19 @@ def serialize(model, exclude_fields=[]):
                 else (c, getattr(model, c)) for c in columns)
 
 
-def create_inbox_message(data, content_binding=CB_XML_112608):
+def create_inbox_message(data, content_binding=t.VID_CERT_EU_JSON_10):
     """Creates TAXII message from data"""
     xml_content_block1 = tm.ContentBlock(
         content_binding=content_binding,
         content=data,
         timestamp_label=datetime.datetime.now(tzutc()))
-
     msg_id = tm.generate_message_id()
 
     inbox_message = tm.InboxMessage(
         message_id=msg_id,
         content_blocks=[xml_content_block1])
-    return msg_id, inbox_message.to_xml()
+
+    return msg_id, inbox_message.to_json()
 
 
 def load_db_data():
@@ -171,15 +170,16 @@ def main(**args):
     if args['data_type'] == 'string':
         msg_id, msg = create_inbox_message(args['data'])
     elif args['data_type'] == 'xml':
-        msg_id, msg = create_inbox_message(open(args['data']).read())
+        print '[-] No more XML, use JSON'
+        raise SystemExit
+        #msg_id, msg = create_inbox_message(open(args['data']).read())
     elif args['data_type'] == 'json':
         msg_id, msg = create_inbox_message(load_db_data())
-
     http_response = client.callTaxiiService2(args['host'], args['path'],
-                                             t.VID_TAXII_XML_10, msg, args['port'])
+                                             t.VID_CERT_EU_JSON_10, msg, args['port'])
 
     taxii_response = t.get_message_from_http_response(http_response, msg_id)
-    print(taxii_response.to_xml())
+    print(taxii_response.to_json())
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='TAXII Client', epilog='DO NOT USE IN PRODUCTION',

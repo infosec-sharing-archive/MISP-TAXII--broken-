@@ -1,11 +1,12 @@
 from flask import Flask, render_template, make_response
 from flask.ext.sqlalchemy import SQLAlchemy
-from libtaxii import VID_TAXII_XML_10
+from libtaxii import VID_TAXII_XML_10, VID_CERT_EU_JSON_10
 
 app = Flask(__name__)
 app.config.from_object('config')
 
 db = SQLAlchemy(app)
+
 
 @app.errorhandler(404)
 def not_found(error):
@@ -18,7 +19,7 @@ def make_taxii_response(*args, **kwargs):
 
     response = make_response(args)
     response.headers["Content-Type"] = kwargs.get("Content-Type", "application/xml")
-    response.headers['X-TAXII-Content-Type'] = kwargs.get("X-TAXII-Content-Type", VID_TAXII_XML_10)
+    response.headers['X-TAXII-Content-Type'] = kwargs.get("X-TAXII-Content-Type", VID_CERT_EU_JSON_10)
 
     return response
 

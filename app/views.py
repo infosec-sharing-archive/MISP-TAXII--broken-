@@ -1,18 +1,16 @@
 import libtaxii as t
 import libtaxii.messages as tm
-from lxml import etree
-from cStringIO import StringIO
 
 from flask import request
 from app import app, db, make_taxii_response
 from models import Event
-from json import loads, load
-
-import xmltodict
-import sys
+from json import loads
+import time
+import warnings
 
 
 def etree_to_dict(t):
+    warnings.warn('deprecated', DeprecationWarning)
     d = {t.tag: map(etree_to_dict, t.iterchildren())}
     d.update(('@' + k, v) for k, v in t.attrib.iteritems())
     d['text'] = t.text
@@ -26,6 +24,7 @@ def formatXML(parent):
     Decision to add a list is to find the 'List' word
     in the actual parent tag.
     """
+    warnings.warn('deprecated', DeprecationWarning)
     ret = {}
     if parent.items():
         ret.update(dict(parent.items()))
@@ -39,6 +38,7 @@ def formatXML(parent):
         for element in parent:
             ret[element.tag] = formatXML(element)
     return ret
+
 
 @app.route('/discovery', methods=['POST'])
 def discovery_service():
@@ -80,9 +80,9 @@ def poll():
 def inbox():
     """The Inbox Service is the mechanism by which a Consumer accepts messages from a Producer in
     Producer-initiated exchanges (i.e., push messaging)"""
-
-    msg = tm.get_message_from_xml(request.data)
-    dict = msg.to_dict()
+    start = time.time()
+    msg = tm.get_message_from_json(request.data)
+    dict = loads(msg.to_json())
     data = dict['content_blocks'][0]['content']
 
     # for posting XML
@@ -100,51 +100,58 @@ def inbox():
     #db.session.add_all(new_events)
     #db.session.commit()
 
-    if request.headers.get('X-TAXII-Content-Type') == t.VID_TAXII_XML_10:
-        c = None
-        try:
-            c = loads(data)
-        except ValueError as e:
-            print '[-] ' + str(e)
-            try:
-                xml_c = xmltodict.parse(dict['content_blocks'][0]['content'])
-                c = xml_c['CyDefSIG']['Event']
-
-            except Exception as ee:
-                print '[--] ' + str(ee)
-
-        if c:
-            new_events = []
-            for event in c:
-                #print event
-                checkevent = Event.query.filter_by(uuid=event['uuid']).first()
-                if checkevent is None:
-                    e = Event(event['date'], event['risk'], event['info'], event['published'],
-                              event['uuid'], event['Attribute'])
-                    new_events.append(e)
-            db.session.add_all(new_events)
-            try:
-                db.session.commit()
-            except Exception as e:
-                print '[-] ' + str(e)
-                error_message = tm.StatusMessage(
-                    message_id=tm.generate_message_id(),
-                    in_response_to=msg.message_id,
-                    status_type=tm.ST_FAILURE,
-                    status_detail='Could not save session')
-                return make_taxii_response(error_message)
-
-            status_message1 = tm.StatusMessage(
+    if request.headers.get('X-TAXII-Content-Type') == t.VID_CERT_EU_JSON_10:
+        """status_message1 = tm.StatusMessage(
                 message_id=tm.generate_message_id(),
                 in_response_to=msg.message_id,
                 status_type=tm.ST_SUCCESS,
                 status_detail='Machine-processable info here!',
                 message='This is a message.')
 
-            return make_taxii_response(status_message1.to_xml())
+        return make_taxii_response(status_message1.to_json())"""
+
+        try:
+            c = loads(data)
+        except ValueError as e:
+            print '[-] ' + str(e)
+
+        new_events = []
+        for event in c:
+            #print event
+            checkevent = Event.query.filter_by(uuid=event['uuid']).first()
+            if checkevent is None:
+                e = Event(event['date'], event['risk'], event['info'], event['published'],
+                          event['uuid'], event['Attribute'])
+                new_events.append(e)
+        db.session.add_all(new_events)
+
+        try:
+            db.session.commit()
+        except Exception as e:
+            print '[-] ' + str(e)
+            error_message = tm.StatusMessage(
+                message_id=tm.generate_message_id(),
+                in_response_to=msg.message_id,
+                status_type=tm.ST_FAILURE,
+                status_detail='Could not save session')
+            return make_taxii_response(error_message)
+
+        status_message1 = tm.StatusMessage(
+            message_id=tm.generate_message_id(),
+            in_response_to=msg.message_id,
+            status_type=tm.ST_SUCCESS,
+            status_detail="Total Time: %s" % (time.time() - start),
+            message='This is a message.')
+
+        return make_taxii_response(status_message1.to_json())
 
     error_message = tm.StatusMessage(
         message_id=tm.generate_message_id(),
         in_response_to=msg.message_id,
+        message='This queue only accepts %s content type' % t.VID_CERT_EU_JSON_10,
         status_type=tm.ST_FAILURE)
-    return make_taxii_response(error_message)
+    # 165.434
+    # events = 1.528
+    # attrs = 30.312
+
+    return make_taxii_response(error_message.to_json())
