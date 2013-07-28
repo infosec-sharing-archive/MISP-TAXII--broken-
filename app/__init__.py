@@ -1,6 +1,6 @@
 from flask import Flask, render_template, make_response
 from flask.ext.sqlalchemy import SQLAlchemy
-from libtaxii import VID_TAXII_XML_10, VID_CERT_EU_JSON_10
+from libtaxii import VID_CERT_EU_JSON_10
 
 app = Flask(__name__)
 app.config.from_object('config')

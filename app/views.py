@@ -2,6 +2,7 @@ import libtaxii as t
 import libtaxii.messages as tm
 
 from flask import request
+from config import TAXII_ROOT, CB_EVENTS_JSON_10
 from app import app, db, make_taxii_response
 from models import Event
 from json import loads
@@ -44,22 +45,34 @@ def formatXML(parent):
 def discovery_service():
     """The Discovery Service provides a requester with a list of TAXII Services
     and how these Services can be invoked"""
-    service_instance1 = tm.DiscoveryResponse.ServiceInstance(service_type=tm.SVC_INBOX,#Required
-        services_version=t.VID_TAXII_SERVICES_10,#Required
-        protocol_binding = t.VID_TAXII_HTTP_10,#Required
-        service_address = 'http://127.0.0.1/inbox/',#Required
-        message_bindings = [t.VID_TAXII_XML_10],#Required, must have at least one value in the list
-        inbox_service_accepted_content = [t.CB_STIX_XML_10],#Optional for service_type=SVC_INBOX, prohibited otherwise
-        #If this is absent and service_type=SVC_INBOX,
-        #It means the inbox service accepts all content
-        available=True,#Optional - defaults to None, which means 'Unknown'
-        message = 'This is a message.')#Optional
 
-    discovery_response1 = tm.DiscoveryResponse(message_id = tm.generate_message_id(),#Required
-        in_response_to = tm.generate_message_id(),#Required. This should be the ID of the corresponding request
-        service_instances = [service_instance1])#Optional.
+    request_msg = tm.get_message_from_json(request.data)
 
-    return discovery_response1.to_xml()
+    inbox_instance = tm.DiscoveryResponse.ServiceInstance(
+        service_type=tm.SVC_INBOX,
+        services_version=t.VID_TAXII_SERVICES_10,
+        protocol_binding=t.VID_TAXII_HTTP_10,
+        service_address=TAXII_ROOT + '/inbox/',
+        message_bindings=[t.VID_CERT_EU_JSON_10],
+        inbox_service_accepted_content=[CB_EVENTS_JSON_10],
+        available=True,
+        message='Inbox service')
+    poll_instance = tm.DiscoveryResponse.ServiceInstance(
+        service_type=tm.SVC_POLL,
+        services_version=t.VID_TAXII_SERVICES_10,
+        protocol_binding=t.VID_TAXII_HTTP_10,
+        service_address=TAXII_ROOT + '/poll/',
+        message_bindings=[t.VID_TAXII_XML_10,  t.VID_CERT_EU_JSON_10],
+        inbox_service_accepted_content=[t.CB_STIX_XML_10, CB_EVENTS_JSON_10],
+        available=True,
+        message='Poll service')
+
+    discovery_response = tm.DiscoveryResponse(
+        message_id=tm.generate_message_id(),
+        in_response_to=request_msg.message_id,
+        service_instances=[inbox_instance, poll_instance])
+
+    return discovery_response.to_json()
 
 
 @app.route('/feeds', methods=['POST'])
@@ -150,8 +163,5 @@ def inbox():
         in_response_to=msg.message_id,
         message='This queue only accepts %s content type' % t.VID_CERT_EU_JSON_10,
         status_type=tm.ST_FAILURE)
-    # 165.434
-    # events = 1.528
-    # attrs = 30.312
 
     return make_taxii_response(error_message.to_json())

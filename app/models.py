@@ -39,7 +39,6 @@ class Event(db.Model):
         return '<{}, {}>'.format(self.uuid, ":".join([a.uuid for a in self.attributes]))
 
 
-
 class Attribute(db.Model):
     __tablename__ = 'attributes'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)

@@ -14,18 +14,19 @@ from json import dumps
 import warnings
 
 
-PID_FILE = '/tmp/taxii_daemon.pid'
-PROXY_ENABLED = True
+PID_FILE = '/tmp/taxii_client.pid'
+PROXY_ENABLED = True 
 PROXY_SCHEME = 'http'
 PROXY_STRING = '127.0.0.1:8008'
 TAXII_SERVICE_HOST = '127.0.0.1'
-TAXII_SERVICE_PORT = 4242
-TAXII_SERVICE_PATH = '/inbox'
+TAXII_SERVICE_PORT = 8888
+TAXII_SERVICE_PATH = '/taxii/inbox'
+# client gets data from DB and posts it to TAXII_SERVICE_HOST
+# only required if you get data from database
+DB = create_engine('mysql://root@127.0.0.1:3309/CTI_db_test')
 
-# only required if you get data from a DB
 Base = declarative_base()
-db = create_engine('mysql://root@127.0.0.1:3309/CTI_db_test')
-Session = sessionmaker(bind=db)
+Session = sessionmaker(bind=DB)
 
 
 def is_process_running(pid):
@@ -50,17 +51,9 @@ def check_process(path):
     return pid
 
 
-def serialize(model, exclude_fields=[]):
-    warnings.warn('deprecated', DeprecationWarning)
-    """Transforms a model into a dictionary which can be dumped to JSON."""
-    columns = [c.key for c in class_mapper(model.__class__).columns if c not in exclude_fields]
-    return dict((c, getattr(model, c).__str__()) if type(getattr(model, c)) is datetime.date
-                else (c, getattr(model, c)) for c in columns)
-
-
 def create_inbox_message(data, content_binding=t.VID_CERT_EU_JSON_10):
     """Creates TAXII message from data"""
-    xml_content_block1 = tm.ContentBlock(
+    content_block = tm.ContentBlock(
         content_binding=content_binding,
         content=data,
         timestamp_label=datetime.datetime.now(tzutc()))
@@ -68,7 +61,7 @@ def create_inbox_message(data, content_binding=t.VID_CERT_EU_JSON_10):
 
     inbox_message = tm.InboxMessage(
         message_id=msg_id,
-        content_blocks=[xml_content_block1])
+        content_blocks=[content_block])
 
     return msg_id, inbox_message.to_json()
 
@@ -174,7 +167,10 @@ def main(**args):
         raise SystemExit
         #msg_id, msg = create_inbox_message(open(args['data']).read())
     elif args['data_type'] == 'json':
+        msg_id, msg = create_inbox_message(open(args['data']).read())
+    elif args['data_type'] == 'sync':
         msg_id, msg = create_inbox_message(load_db_data())
+
     http_response = client.callTaxiiService2(args['host'], args['path'],
                                              t.VID_CERT_EU_JSON_10, msg, args['port'])
 
@@ -184,7 +180,8 @@ def main(**args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='TAXII Client', epilog='DO NOT USE IN PRODUCTION',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("-t", "--type", dest="data_type", required=True, default='json', help='Data type your posting')
+    parser.add_argument("-t", "--type", dest="data_type", choices=['json', 'xml', 'sync'], default='sync',
+                        help='Data type your posting, "sync" will read DB')
     parser.add_argument("-d", "--data", dest="data", required=False, help='Data to be posted to TAXII Service')
     parser.add_argument("-th", "--taxii_host", dest="host", default=TAXII_SERVICE_HOST, help='TAXII Service Host')
     parser.add_argument("-tp", "--taxii_port", dest="port", default=TAXII_SERVICE_PORT, help='TAXII Service Port')
