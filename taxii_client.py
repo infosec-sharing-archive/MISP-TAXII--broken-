@@ -9,10 +9,8 @@ import libtaxii.clients as tc
 from sqlalchemy import create_engine, Column, ForeignKey
 from sqlalchemy import Integer, String, Date, Text, Boolean
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relation, sessionmaker, class_mapper
+from sqlalchemy.orm import relation, sessionmaker
 from json import dumps
-import warnings
-
 
 PID_FILE = '/tmp/taxii_client.pid'
 PROXY_ENABLED = True 
