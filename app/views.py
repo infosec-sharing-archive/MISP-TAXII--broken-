@@ -45,6 +45,7 @@ def formatXML(parent):
 def discovery_service():
     """The Discovery Service provides a requester with a list of TAXII Services
     and how these Services can be invoked"""
+    # be conservative in what you send and liberal in what you accept
 
     request_msg = tm.get_message_from_json(request.data)
 
