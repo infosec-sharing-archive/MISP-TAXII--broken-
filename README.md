@@ -66,6 +66,7 @@ LICENSE
 =======
 
 taxii_service: synchronize MISP events and attributes
+
 Copyright (c) 2013 CERT-EU
 
 This program is free software: you can redistribute it and/or modify
