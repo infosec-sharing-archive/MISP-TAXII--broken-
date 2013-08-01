@@ -1,3 +1,9 @@
+Overview
+========
+
+Simple JSON implementation of Trusted Automated eXchange of Indicator 
+Information (TAXII).
+
 ASSUMPTION
 ==========
 you have a running MISP instance running on an Ubuntu 12.04 or higher server
