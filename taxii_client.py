@@ -66,7 +66,9 @@ def create_inbox_message(data, content_binding=t.VID_CERT_EU_JSON_10):
 
 def load_db_data():
     session = Session()
-    events = [e.serialize for e in session.query(Event).filter(Event.published == 1).all()]
+    events = [e.serialize
+              for e
+              in session.query(Event).filter(Event.published == 1).all()]
     return dumps(events)
 
 
@@ -169,22 +171,60 @@ def main(**args):
     elif args['data_type'] == 'sync':
         msg_id, msg = create_inbox_message(load_db_data())
 
-    http_response = client.callTaxiiService2(args['host'], args['path'],
-                                             t.VID_CERT_EU_JSON_10, msg, args['port'])
+    http_response = client.callTaxiiService2(
+        args['host'], args['path'],
+        t.VID_CERT_EU_JSON_10, msg, args['port'])
 
     taxii_response = t.get_message_from_http_response(http_response, msg_id)
     print(taxii_response.to_json())
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='TAXII Client', epilog='DO NOT USE IN PRODUCTION',
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("-t", "--type", dest="data_type", choices=['json', 'xml', 'sync'], default='sync',
-                        help='Data type your posting, "sync" will read DB')
-    parser.add_argument("-d", "--data", dest="data", required=False, help='Data to be posted to TAXII Service')
-    parser.add_argument("-th", "--taxii_host", dest="host", default=TAXII_SERVICE_HOST, help='TAXII Service Host')
-    parser.add_argument("-tp", "--taxii_port", dest="port", default=TAXII_SERVICE_PORT, help='TAXII Service Port')
-    parser.add_argument("-tpath", "--taxii_path", dest="path", default=TAXII_SERVICE_PATH, help='TAXII Service Path')
+    parser = argparse.ArgumentParser(
+        description='TAXII Client',
+        epilog='DO NOT USE IN PRODUCTION',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument(
+        "-t", "--type",
+        dest="data_type",
+        choices=['json', 'xml', 'sync'],
+        default='sync',
+        help='Data type your posting, "sync" will read DB')
+    parser.add_argument(
+        "-d", "--data",
+        dest="data",
+        required=False,
+        help='Data to be posted to TAXII Service')
+    parser.add_argument(
+        "-th", "--taxii_host",
+        dest="host",
+        default=TAXII_SERVICE_HOST,
+        help='TAXII Service Host')
+    parser.add_argument(
+        "-tp", "--taxii_port",
+        dest="port",
+        default=TAXII_SERVICE_PORT,
+        help='TAXII Service Port')
+    parser.add_argument(
+        "-tpath", "--taxii_path",
+        dest="path",
+        default=TAXII_SERVICE_PATH,
+        help='TAXII Service Path')
     args = parser.parse_args()
 
     main(**vars(args))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

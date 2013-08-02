@@ -19,7 +19,9 @@ def make_taxii_response(*args, **kwargs):
 
     response = make_response(args)
     response.headers["Content-Type"] = kwargs.get("Content-Type", "application/xml")
-    response.headers['X-TAXII-Content-Type'] = kwargs.get("X-TAXII-Content-Type", VID_CERT_EU_JSON_10)
+    response.headers['X-TAXII-Content-Type'] = kwargs.get(
+        "X-TAXII-Content-Type",
+        VID_CERT_EU_JSON_10)
 
     return response
 

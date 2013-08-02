@@ -6,7 +6,7 @@ Information (TAXII).
 
 ASSUMPTION
 ==========
-you have a running MISP instance running on an Ubuntu 12.04 or higher server
+you have a running MISP instance on an Ubuntu 12.04 or higher server
 
 SERVICE INSTALL
 =======

@@ -78,9 +78,9 @@ def discovery_service():
 
 @app.route('/feeds', methods=['POST'])
 def feeds():
-    """The Feed Management Service is the mechanism by which a Consumer can request information about
-    TAXII Data Feeds, request subscriptions to TAXII Data Feeds, request the status of a subscription, or
-    terminate existing subscriptions to TAXII Data Feeds."""
+    """The Feed Management Service is the mechanism by which a Consumer can request information
+    about TAXII Data Feeds, request subscriptions to TAXII Data Feeds, request the status of a
+    subscription, or terminate existing subscriptions to TAXII Data Feeds."""
     pass
 
 
