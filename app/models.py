@@ -27,6 +27,8 @@ class Event(db.Model):
 
         for attr in attrs:
             if 'uuid' in attr:
+                if attr['distribution'] < 2:
+                    continue
                 try:
                     attrcheck = Attribute.query.filter_by(uuid=attr['uuid']).first()
                     if attrcheck is None:
@@ -82,7 +84,14 @@ class Attribute(db.Model):
 
 
 def update_distribution(mapper, connection, target):
-    pass
+    """
+    0: 'Your organisation only',
+    1: 'This community only',
+    2: 'Connected communities',
+    3: 'All communities'
+    """
+    if target.distribution == 2:
+        target.distribution = 1
 
 
 def save_attachment(mapper, connection, target):

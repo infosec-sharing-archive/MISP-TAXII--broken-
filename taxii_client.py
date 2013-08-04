@@ -75,7 +75,7 @@ def load_db_data():
     session = Session()
     events = [e.serialize
               for e
-              in session.query(Event).filter(Event.published == 1, Event.id == 14).limit(1).all()]
+              in session.query(Event).filter(Event.published == 1).all()]
     return json.dumps(events)
 
 

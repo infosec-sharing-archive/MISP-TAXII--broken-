@@ -132,7 +132,8 @@ def inbox():
 
         new_events = []
         for event in c:
-            #print event
+            if event['distribution'] < 2:
+                continue
             checkevent = Event.query.filter_by(uuid=event['uuid']).first()
             if checkevent is None:
                 e = Event(event['date'], event['risk'], event['info'], event['published'],
