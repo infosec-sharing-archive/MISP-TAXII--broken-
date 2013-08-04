@@ -41,7 +41,7 @@ def formatXML(parent):
     return ret
 
 
-@app.route('/discovery', methods=['POST'])
+@app.route('/taxii-discovery-service', methods=['POST'])
 def discovery_service():
     """The Discovery Service provides a requester with a list of TAXII Services
     and how these Services can be invoked"""
@@ -90,6 +90,7 @@ def poll():
     a TAXII Data Feed"""
     pass
 
+
 @app.route('/inbox', methods=['POST'])
 def inbox():
     """The Inbox Service is the mechanism by which a Consumer accepts messages from a Producer in
@@ -135,7 +136,7 @@ def inbox():
             checkevent = Event.query.filter_by(uuid=event['uuid']).first()
             if checkevent is None:
                 e = Event(event['date'], event['risk'], event['info'], event['published'],
-                          event['uuid'], event['Attribute'])
+                          event['uuid'], event['distribution'], event['Attribute'])
                 new_events.append(e)
         db.session.add_all(new_events)
 

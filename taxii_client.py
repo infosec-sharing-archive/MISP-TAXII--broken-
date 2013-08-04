@@ -10,18 +10,25 @@ from sqlalchemy import create_engine, Column, ForeignKey
 from sqlalchemy import Integer, String, Date, Text, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relation, sessionmaker
-from json import dumps
+from base64 import b64encode
+try:
+    import simplejson as json
+except ImportError:
+    import json
+
 
 PID_FILE = '/tmp/taxii_client.pid'
 PROXY_ENABLED = True 
 PROXY_SCHEME = 'http'
 PROXY_STRING = '127.0.0.1:8008'
+ATTACHMENTS_PATH_OUT = '/var/tmp/files_out'
+"""Search for attachments in this path and attach them to the attribute"""
 TAXII_SERVICE_HOST = '127.0.0.1'
-TAXII_SERVICE_PORT = 8888
-TAXII_SERVICE_PATH = '/taxii/inbox'
-# client gets data from DB and posts it to TAXII_SERVICE_HOST
-# only required if you get data from database
+TAXII_SERVICE_PORT = 4242
+TAXII_SERVICE_PATH = '/inbox'
 DB = create_engine('mysql://root@127.0.0.1:3309/CTI_db_test')
+"""The client gets data from DB and posts it to TAXII_SERVICE_HOST
+This is only required if you get data from database"""
 
 Base = declarative_base()
 Session = sessionmaker(bind=DB)
@@ -68,8 +75,8 @@ def load_db_data():
     session = Session()
     events = [e.serialize
               for e
-              in session.query(Event).filter(Event.published == 1).all()]
-    return dumps(events)
+              in session.query(Event).filter(Event.published == 1, Event.id == 14).limit(1).all()]
+    return json.dumps(events)
 
 
 class Event(Base):
@@ -80,6 +87,7 @@ class Event(Base):
     risk = Column(String)
     info = Column(Text)
     published = Column(Integer)
+    distribution = Column(Integer)
     uuid = Column(String)
     attributes = relation('Attribute', backref='event')
 
@@ -87,25 +95,27 @@ class Event(Base):
     def serialize(self):
         """Return object data in easily serializeable format"""
         return {
+            "id": self.id,
             "date": self.date.__str__(),
             "risk": self.risk,
             "info": self.info,
             "published": self.published,
+            "distribution": self.distribution,
             "uuid": self.uuid,
             "Attribute": self.serialize_attributes
-
         }
 
     @property
     def serialize_attributes(self):
         return [item.serialize for item in self.attributes]
 
-    def __init__(self, date, risk, info, published, uuid, attrs):
+    def __init__(self, date, risk, info, published, uuid, distribution, attrs):
         self.date = date
         self.risk = risk
         self.info = info
         self.published = published
         self.uuid = uuid
+        self.distribution = distribution
 
     def __repr__(self):
         return '<Event %r>' % self.uuid
@@ -121,21 +131,39 @@ class Attribute(Base):
     to_ids = Column(Boolean)
     uuid = Column(String(255))
     revision = Column(Integer)
-    private = Column(Boolean)
+    distribution = Column(Integer)
 
     @property
     def serialize(self):
         """Return object data in easily serializeable format"""
         return {
+            "id": self.id,
             "category": self.category,
             "to_ids": self.to_ids,
             "value1": self.value1,
             "value2": self.value2,
             "uuid": self.uuid,
-            "private": self.private,
-            'revision': self.revision
-
+            "distribution": self.distribution,
+            'revision': self.revision,
+            "attachment": self.serialize_attachments
         }
+
+    @property
+    def serialize_attachments(self):
+        """MISP uses only one file per attribute
+                For multiple files use something like:
+                for filename in filenames:
+                    fullpath = os.path.join(ATTACHMENTS_PATH, str(self.event_id), filename)
+                    f = open(fullpath, 'rb')
+                    files[filename] = b64encode(f.read())
+        """
+        for (dirpath, dirnames, filenames) in os.walk(os.path.join(ATTACHMENTS_PATH_OUT,
+                                                                   str(self.event_id))):
+            if str(self.id) in filenames:
+                fullpath = os.path.join(ATTACHMENTS_PATH_OUT, str(self.event_id), str(self.id))
+                f = open(fullpath, 'rb')
+                return b64encode(f.read())
+        return None
 
     def __init__(self, **kwargs):
         if kwargs:
@@ -144,7 +172,7 @@ class Attribute(Base):
             self.value1 = kwargs['value1']
             self.value2 = kwargs['value2']
             self.uuid = kwargs['uuid']
-            self.private = kwargs['private']
+            self.distribution = kwargs['distribution']
             self.revision = kwargs['revision']
 
     def __repr__(self):
