@@ -3,22 +3,24 @@ Overview
 
 Simple JSON implementation of Trusted Automated eXchange of Indicator 
 Information (TAXII).
+Although this implementation is MISP specific it can be easily adapted for a broader audience.
 
 ASSUMPTION
 ==========
-you have a running MISP instance on an Ubuntu 12.04 or higher server
+you have a running MISP instance (develop or CTI branch) on an Ubuntu 12.04 or higher server
 
 SERVICE INSTALL
 =======
 install dependencies
 ---------------------
     apt-get update
-    apt-get install python-flup python-virtualenv libapache2-mod-wsgi python-dev libxslt1-dev libxml2-dev git libmysqlclient-dev
+    apt-get install python-flup python-virtualenv libapache2-mod-wsgi python-dev libxslt1-dev
+    libxml2-dev git libmysqlclient-dev
 
-clone the service and setup the venv
+clone the service and setup the Virtual Python Environment
 ------------------------------------
     cd /home/www
-    git clone https://github.com/MISP/taxii_service.git taxiiservice
+    git clone https://github.com/MISP/MISP-TAXII.git taxiiservice
     cd taxiiservice
     virtualenv flask
     flask/bin/pip install -r requirements.txt
@@ -36,12 +38,15 @@ service configuration
 minimal required changes:
 * change SQLALCHEMY_DATABASE_URI to reflect your database configuration
 * edit TAXII_ROOT to add your taxii document root
+* edit ATTACHMENTS_PATH_IN, this is where attribute attachments will be saved
 
 edit your apache.misp configuration and add
 --------------------------------------------
     WSGIDaemonProcess taxii processes=2 threads=15 display-name=%{GROUP}
     WSGIProcessGroup taxii
     WSGIScriptAlias /taxii /home/www/taxiiservice/taxii_service.wsgi
+
+Tweak configuration as needed.
 
 restart apache
 --------------
@@ -56,14 +61,16 @@ taxii_client.py configuration:
     TAXII_SERVICE_HOST = '127.0.0.1'
     TAXII_SERVICE_PORT = 8888
     TAXII_SERVICE_PATH = '/taxii/inbox'
+    ATTACHMENTS_PATH_IN = '/var/tmp/files_out'
     DB = create_engine('mysql://user:pass@host:port/db')
 
 
 RUN
 ===
 
-Executing the client without parameters will push all events and associated attributes from
-DB to TAXII_SERVICE_HOST. You can bypass this by providing the parameteres to the client.
+Executing the client without parameters will push all events, associated attributes and
+attribute attachments from DB to TAXII_SERVICE_HOST. You can bypass this by providing  
+parameteres to the client.
 For details:
 
     python taxii_client.py -h
