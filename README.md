@@ -12,6 +12,7 @@ you have a running MISP instance (develop or CTI branch) on an Ubuntu 12.04 or h
 
 SERVICE INSTALL
 ===============
+For a quick testing envinronmet you can use https://github.com/MISP/MISP-TAXII-Vagrant
 install dependencies
 ---------------------
     apt-get update
