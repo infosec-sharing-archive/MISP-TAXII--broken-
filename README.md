@@ -4,13 +4,14 @@ Overview
 Simple JSON implementation of Trusted Automated eXchange of Indicator 
 Information (TAXII).
 Although this implementation is MISP specific it can be easily adapted for a broader audience.
+Currently only the Inbox service is supported.
 
 ASSUMPTION
 ==========
 you have a running MISP instance (develop or CTI branch) on an Ubuntu 12.04 or higher server
 
 SERVICE INSTALL
-=======
+===============
 install dependencies
 ---------------------
     apt-get update
@@ -69,7 +70,7 @@ RUN
 ===
 
 Executing the client without parameters will push all events, associated attributes and
-attribute attachments from DB to TAXII_SERVICE_HOST. You can bypass this by providing  
+attribute attachments from DB to TAXII_SERVICE_HOST. You can bypass this by providing
 parameteres to the client.
 For details:
 
