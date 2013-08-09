@@ -87,6 +87,7 @@ class Event(Base):
     risk = Column(String)
     info = Column(Text)
     published = Column(Integer)
+    timestamp = Column(Integer)
     distribution = Column(Integer)
     uuid = Column(String)
     attributes = relation('Attribute', backref='event')
@@ -100,6 +101,7 @@ class Event(Base):
             "risk": self.risk,
             "info": self.info,
             "published": self.published,
+            "timestamp": self.timestamp,
             "distribution": self.distribution,
             "uuid": self.uuid,
             "Attribute": self.serialize_attributes
@@ -109,12 +111,13 @@ class Event(Base):
     def serialize_attributes(self):
         return [item.serialize for item in self.attributes]
 
-    def __init__(self, date, risk, info, published, uuid, distribution, attrs):
+    def __init__(self, date, risk, info, published, uuid, timestamp, distribution, attrs):
         self.date = date
         self.risk = risk
         self.info = info
         self.published = published
         self.uuid = uuid
+        self.timestamp = timestamp
         self.distribution = distribution
 
     def __repr__(self):
@@ -131,6 +134,7 @@ class Attribute(Base):
     to_ids = Column(Boolean)
     uuid = Column(String(255))
     revision = Column(Integer)
+    timestamp = Column(Integer)
     distribution = Column(Integer)
 
     @property
@@ -143,6 +147,7 @@ class Attribute(Base):
             "value1": self.value1,
             "value2": self.value2,
             "uuid": self.uuid,
+            "timestamp": self.timestamp,
             "distribution": self.distribution,
             'revision': self.revision,
             "attachment": self.serialize_attachments
@@ -172,6 +177,7 @@ class Attribute(Base):
             self.value1 = kwargs['value1']
             self.value2 = kwargs['value2']
             self.uuid = kwargs['uuid']
+            self.timestamp = kwargs['timestamp']
             self.distribution = kwargs['distribution']
             self.revision = kwargs['revision']
 

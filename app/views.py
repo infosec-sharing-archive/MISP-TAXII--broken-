@@ -137,7 +137,8 @@ def inbox():
             checkevent = Event.query.filter_by(uuid=event['uuid']).first()
             if checkevent is None:
                 e = Event(event['date'], event['risk'], event['info'], event['published'],
-                          event['uuid'], event['distribution'], event['Attribute'])
+                          event['uuid'], event['timestamp'], event['distribution'],
+                          event['Attribute'])
                 new_events.append(e)
         db.session.add_all(new_events)
 

@@ -14,15 +14,17 @@ class Event(db.Model):
     info = db.Column(db.Text)
     published = db.Column(db.Integer)
     uuid = db.Column(db.String)
+    timestamp = db.Column(db.Integer(11))
     distribution = db.Column(db.Integer)
     attributes = db.relationship('Attribute', backref='event', lazy='dynamic')
 
-    def __init__(self, date, risk, info, published, uuid, distribution, attrs):
+    def __init__(self, date, risk, info, published, uuid, timestamp, distribution, attrs):
         self.date = date
         self.risk = risk
         self.info = info
         self.published = published
         self.uuid = uuid
+        self.timestamp = timestamp
         self.distribution = distribution
 
         for attr in attrs:
@@ -59,6 +61,7 @@ class Attribute(db.Model):
     to_ids = db.Column(db.Boolean)
     uuid = db.Column(db.String(255))
     revision = db.Column(db.Integer)
+    timestamp = db.Column(db.Integer(11))
     distribution = db.Column(db.Integer)
     attachment = None
 
@@ -70,6 +73,7 @@ class Attribute(db.Model):
             self.value2 = kwargs['value2']
             self.uuid = kwargs['uuid']
             self.revision = kwargs['revision']
+            self.timestamp = kwargs['timestamp']
             self.distribution = kwargs['distribution']
             self.attachment = kwargs['attachment']
             #if kwargs['attachment'] is not None:
