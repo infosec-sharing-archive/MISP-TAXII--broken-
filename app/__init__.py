@@ -1,9 +1,21 @@
 from flask import Flask, render_template, make_response
 from flask.ext.sqlalchemy import SQLAlchemy
 from libtaxii import VID_CERT_EU_JSON_10
+from logging import Formatter
 
 app = Flask(__name__)
 app.config.from_object('config')
+
+if not app.debug:
+    import logging
+    from logging import FileHandler
+    file_handler = FileHandler('taxii.log')
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(Formatter(
+        '%(asctime)s %(levelname)s: %(message)s '
+        '[in %(pathname)s:%(lineno)d]'
+    ))
+    app.logger.addHandler(file_handler)
 
 db = SQLAlchemy(app)
 

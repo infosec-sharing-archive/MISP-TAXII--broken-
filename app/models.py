@@ -10,17 +10,20 @@ class Event(db.Model):
     __tablename__ = 'events'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     date = db.Column(db.Date, default=datetime.datetime.now())
-    risk = db.Column(db.String)
+    #risk = db.Column(db.String)
+    threat_level_id = db.Column(db.Integer)
     info = db.Column(db.Text)
     published = db.Column(db.Integer)
     uuid = db.Column(db.String)
     timestamp = db.Column(db.Integer(11))
     distribution = db.Column(db.Integer)
     attributes = db.relationship('Attribute', backref='event', lazy='dynamic')
+    #threat_level = db.relationship('ThreatLevel', backref='event', lazy='dynamic')
 
-    def __init__(self, date, risk, info, published, uuid, timestamp, distribution, attrs):
+    def __init__(self, date, info, published, uuid, timestamp, distribution,
+                 threat_level_id, attrs):
         self.date = date
-        self.risk = risk
+        self.threat_level_id = threat_level_id
         self.info = info
         self.published = published
         self.uuid = uuid
@@ -60,7 +63,7 @@ class Attribute(db.Model):
     value2 = db.Column(db.Text())
     to_ids = db.Column(db.Boolean)
     uuid = db.Column(db.String(255))
-    revision = db.Column(db.Integer)
+    #revision = db.Column(db.Integer)
     timestamp = db.Column(db.Integer(11))
     distribution = db.Column(db.Integer)
     attachment = None
@@ -72,10 +75,10 @@ class Attribute(db.Model):
             self.value1 = kwargs['value1']
             self.value2 = kwargs['value2']
             self.uuid = kwargs['uuid']
-            self.revision = kwargs['revision']
+            #self.revision = kwargs['revision']
             self.timestamp = kwargs['timestamp']
             self.distribution = kwargs['distribution']
-            self.attachment = kwargs['attachment']
+            #self.attachment = kwargs['attachment']
             #if kwargs['attachment'] is not None:
                 #print os.path.join(ATTACHMENTS_PATH_IN, str(self.event_id))
                 #os.makedirs(os.path.join(ATTACHMENTS_PATH_IN, str(self.event_id)), 0755)
@@ -85,6 +88,14 @@ class Attribute(db.Model):
 
     def __repr__(self):
         return '<Attribute %r>' % self.category
+
+
+class ThreatLevel(db.Model):
+    __tablename__ = 'threat_levels'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.String)
+    description = db.Column(db.String)
+    form_description = db.Column(db.String)
 
 
 def update_distribution(mapper, connection, target):
