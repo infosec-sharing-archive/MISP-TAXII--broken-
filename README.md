@@ -1,3 +1,8 @@
+THIS TOOL IS NOT MAINTAINED AND NOT WORKING ANYMORE WITH MISP
+=============================================================
+Unfortunately this tool was not maintained and is not working anymore with the current version of MISP.
+
+
 Overview
 ========
 
